@@ -1,6 +1,6 @@
 # Sample Chapter — After the Test: Reading k6 Output Without Fooling Yourself
 
-*From the Performance Testing Heuristics Pack (in production — see the pre-order page for the full contents).*
+*From the Performance Testing Heuristics Pack (in production — see the product page for the full contents).*
 
 ---
 
