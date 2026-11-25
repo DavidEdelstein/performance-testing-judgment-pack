@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Performance Testing Judgment Pack — pre-order</title>
+<meta name="description" content="A heuristics pack for working performance testers: decisions before the test, traps in the results after it, and how to defend the verdict. Free sample chapter.">
+<style>
+  :root { --ink:#1a1a1a; --muted:#555; --line:#ddd; --accent:#0b5cad; --bg:#fff; --soft:#f6f7f8; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); line-height:1.55; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 18px 64px; }
+  h1 { font-size: 2rem; line-height:1.2; margin: 0.4em 0 0.3em; }
+  h2 { font-size: 1.3rem; margin: 1.8em 0 0.5em; }
+  p, li { font-size: 1.02rem; }
+  .kicker { color:var(--accent); font-weight:600; letter-spacing:.02em; text-transform:uppercase; font-size:.8rem; }
+  .sub { font-size:1.15rem; color:var(--muted); }
+  .cols { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .cols{ grid-template-columns:1fr; } }
+  .card { border:1px solid var(--line); border-radius:10px; padding:16px 18px; background:#fff; }
+  .soft { background:var(--soft); }
+  .price { font-size:1.6rem; font-weight:700; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:10px 18px; border-radius:8px; font-weight:600; margin-top:8px; }
+  .btn.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  .note { border-left:4px solid var(--accent); background:var(--soft); padding:12px 16px; border-radius:0 8px 8px 0; }
+  .placeholder { background:#fff3cd; padding:0 4px; border-radius:3px; }
+  ol.contents li { margin-bottom:10px; }
+  footer { margin-top:48px; border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:.92rem; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Pre-order · In production</p>
+  <h1>The Performance Testing Judgment Pack</h1>
+  <p class="sub">Performance testing is mostly judgment. This pack is the judgment, written down.</p>
+  <p>A heuristics pack for working performance testers: the decisions before the test, the traps in the results after it, how to explain those results to leadership, how to get teams to actually do this work, and how to review AI-generated tests and analysis before you sign them. Files, not a course. Read them next to a real run.</p>
+
+  <div class="cols">
+    <div class="card">
+      <h2 style="margin-top:0">Who this is for</h2>
+      <ul>
+        <li>Performance testers and quality engineers who can already run a load test and want the results to hold up under scrutiny</li>
+        <li>SREs and platform engineers who review other teams' test results and have to say yes or no</li>
+        <li>Team leads who need to explain a test result upward and defend the verdict</li>
+        <li>Anyone using AI tools to draft performance tests or reports who wants a verification discipline before trusting the output</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Who this is NOT for</h2>
+      <ul>
+        <li><strong>Not a course.</strong> No videos, no lessons, no cohort, nothing to attend. You buy files, you read them, you apply them.</li>
+        <li><strong>Not tool mechanics.</strong> It will not teach k6 syntax or what a VU is. Grafana's documentation teaches that well, and it is free. This pack starts where the documentation stops.</li>
+        <li><strong>Not a beginner's introduction.</strong> It assumes you have run tests and read real output.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>What's in the pack</h2>
+  <ol class="contents">
+    <li><strong>Before the test — decisions and workload modeling.</strong> Which test type answers the question you actually have, and when each type is the wrong tool. Workload modeling, VU calculation with Little's Law (both methods, and how to choose), and a decision tree for what to test right now.</li>
+    <li><strong>After the test — reading results without fooling yourself.</strong> The traps in load-test output, named: checks read before failure rates, why 0% failures with half your checks failing is not a partial pass, the threshold checkmark that means almost nothing, averages dragged down by fast failures, percentiles built on too little data, and measurement windows that exclude ramp noise. <em>(This is the free sample chapter, below.)</em></li>
+    <li><strong>Explaining results to leadership.</strong> A two-tier reporting system — a verdict-first summary in plain language over a technical evidence page — with acceptance bands and a watch-items format. Plus frameworks for turning metrics into decisions and dollars, by audience level. These frameworks are research-backed and labeled as such: the industry's mapped approaches to a hard conversation, presented honestly, not dressed up as anyone's personal pitch history.</li>
+    <li><strong>Getting teams to actually do it — enablement and governance.</strong> Why testing mandates produce checkbox compliance, why quality gates on practices people don't understand get edited instead of obeyed, and what works instead: a smart-check cadence policy (not test-every-deploy), per-deploy risk scoring, and building the standard into the platform so doing it right is the easy path.</li>
+    <li><strong>Reviewing AI-generated tests and analysis.</strong> An eight-point checklist for verifying an AI-drafted test design and an AI-drafted report, in order. What AI gets wrong in stage design and why, how to align the data source and the question, and how to make the AI verify its own work so the human keeps the understanding and the verdict instead of redoing the arithmetic.</li>
+  </ol>
+
+  <h2>Free sample chapter</h2>
+  <p>The complete Chapter 2 — <em>After the Test: Reading k6 Output Without Fooling Yourself</em> — is free. It is a full chapter, not an excerpt: the reading-order rule, all five named traps, two worked runs with the verdicts they actually earn, and the one-page checklist card. If it changes how you read your next run, the pack is for you. If it doesn't, it cost you nothing.</p>
+  <p><a class="btn secondary" href="sample-chapter.md">Read / download the free chapter</a></p>
+
+  <h2 id="preorder">Pre-order — the honest version</h2>
+  <div class="note">
+    <p style="margin-top:0">This pack is in production now. It is not finished, and this page will not pretend otherwise. Pre-ordering reserves the launch price, puts you first in line when the files ship, and — stated plainly — it is how we decide whether to finish it. The full build happens if enough practitioners pre-order; that is the test this page is running.</p>
+    <p><strong>Ship date:</strong> <span class="placeholder">[DATE — set before checkout opens]</span></p>
+    <p style="margin-bottom:0"><strong>How pre-order payment works:</strong> checkout runs through Gumroad. Your card details are taken at pre-order and <strong>charged on the release date</strong>, not today. Full refund at any time before the pack ships, no questions, no forms. If the pack does not ship by the date above, every pre-order is refunded in full automatically.</p>
+  </div>
+
+  <div class="cols" style="margin-top:16px">
+    <div class="card">
+      <p class="price">$49</p>
+      <p><strong>Individual</strong> — the full pack for one practitioner.</p>
+      <a class="btn" href="#preorder">Pre-order — Individual</a>
+      <p style="color:var(--muted); font-size:.9rem">Checkout buttons connect when the Gumroad listing goes live.</p>
+    </div>
+    <div class="card">
+      <p class="price">$149</p>
+      <p><strong>Team</strong> — the full pack for a whole team: share it internally and use the checklists and templates in your own test cycles and reports.</p>
+      <a class="btn" href="#preorder">Pre-order — Team</a>
+      <p style="color:var(--muted); font-size:.9rem">Both tiers get the same files. The team license is about internal use, not extra content.</p>
+    </div>
+  </div>
+
+  <h2>Questions</h2>
+  <p><strong>Why pre-order instead of waiting?</strong> The launch price is reserved for pre-orders, and pre-orders are the signal that decides whether the full pack gets built. Waiting is also fine — the sample chapter is free either way.</p>
+  <p><strong>What format is it?</strong> PDF and Markdown files. Readable on any device, printable, no special software, no DRM lock-in. Checklists and templates are separate files so you can keep them next to your test runs.</p>
+  <p><strong>What does the team license cover?</strong> One team inside one organization: share the files with your teammates and use the checklists, templates, and report formats in your own internal work. It does not cover reselling the pack or publishing its contents externally.</p>
+  <p><strong>Is this a course? Will there be videos?</strong> No. It is a pack of files. There is nothing to attend and nothing scheduled.</p>
+  <p><strong>Does it teach k6?</strong> No. It assumes you can run a test. For k6 mechanics and syntax, Grafana's documentation is good and free. This pack covers the judgment around the tool.</p>
+  <p><strong>What if I want a refund after it ships?</strong> <span class="placeholder">[30-day post-delivery refund — David to confirm or strike]</span></p>
+
+  <h2>About the author</h2>
+  <p>David Edelstein is a Quality Engineer (functioning as SRE / Performance Engineering SME). His day-to-day work is performance testing enablement: helping teams run good tests, read their results honestly, and turn them into decisions. This pack is the written form of that work — the heuristics, checklists, and templates, in his own words and from his own practice.</p>
+
+  <footer>
+    <p>The Performance Testing Judgment Pack · Pre-order page · Questions: yitzedelstein@gmail.com</p>
+  </footer>
+</main>
+</body>
+</html>
