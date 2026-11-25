@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 2 — After the Test: Reading k6 Output Without Fooling Yourself (free sample)</title>
+<meta name="description" content="The complete free sample chapter of The Performance Testing Judgment Pack: the traps in load-test output, named, with worked runs and a one-page checklist card.">
+<style>
+  :root { --ink:#1a1a1a; --muted:#555; --line:#ddd; --accent:#0b5cad; --bg:#fff; --soft:#f6f7f8; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); line-height:1.55; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 18px 64px; }
+  h1 { font-size: 1.7rem; line-height:1.25; margin: 0.4em 0 0.3em; }
+  h2 { font-size: 1.3rem; margin: 1.8em 0 0.5em; }
+  h3 { font-size: 1.12rem; margin: 1.5em 0 0.4em; }
+  p, li { font-size: 1.02rem; }
+  .kicker { color:var(--accent); font-weight:600; letter-spacing:.02em; text-transform:uppercase; font-size:.8rem; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px 18px; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:8px; font-size:.95rem; }
+  .bar.bottom { border-bottom:none; border-top:1px solid var(--line); padding-top:14px; margin-top:36px; }
+  a { color:var(--accent); }
+  table { border-collapse:collapse; width:100%; margin:1em 0; font-size:.95rem; display:block; overflow-x:auto; }
+  th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; }
+  code { background:var(--soft); padding:0 3px; border-radius:3px; font-size:.92em; }
+  pre { background:var(--soft); padding:12px; border-radius:8px; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+  blockquote { border-left:4px solid var(--line); margin:1em 0; padding:2px 14px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="bar">
+    <span><a href="index.html">&larr; The Performance Testing Judgment Pack</a></span>
+    <span>Download: <a href="sample-chapter.md">Markdown</a></span>
+  </div>
+  <p class="kicker">Free sample chapter &middot; Chapter 2 of the pack</p>
+<h1>Sample Chapter — After the Test: Reading k6 Output Without Fooling Yourself</h1>
+<p><em>From the Performance Testing Heuristics Pack (in production — see the product page for the full contents).</em></p>
+<hr />
+<p>Your test finished. k6 printed a wall of numbers, some of them green. The natural move is to scan for red, find none that scares you, and write "passed" in the report. That move is how bad results get shipped with confidence. The summary at the end of a k6 run is not lying to you on purpose, but it will let you lie to yourself in specific, predictable ways: a failure rate that reads zero while half your responses were wrong, a checkmark that means almost nothing, an average that looks better than the experience most users actually had, a percentile built on too few requests to mean anything, and a hold period whose first minute was never steady state to begin with. This chapter names those traps, in the order you should read the output, so the verdict you write is the verdict the run actually earned.</p>
+<h2>Read checks first. Always.</h2>
+<p>The single most useful habit in this chapter is an ordering rule: <strong>read the checks line before you read <code>http_req_failed</code>.</strong></p>
+<p>The obvious order is the wrong one. Most people look at <code>http_req_failed</code> first because it sounds like the failure metric. It is not. <code>http_req_failed</code> is a connectivity signal. It tells you whether requests got a response at the network and HTTP level. A server that answers every request with 401 Unauthorized, or 404, or a redirect you did not expect, still reports <code>http_req_failed: 0.00%</code>. The server responded. The response was wrong. <code>http_req_failed</code> does not care.</p>
+<p>Checks care. Checks are the assertions your script wrote: was the status 200, did the body contain the field, did the session token come back. Checks are the only part of the summary that says whether the service did what it was supposed to do. <code>http_req_failed</code> tells you the pipe worked. Checks tell you the truth about the application.</p>
+<p>So the reading order is:</p>
+<ol>
+<li><strong>Checks percentage.</strong> Below 95% is a problem. Below 80% is critical.</li>
+<li><strong>Check breakdown by group.</strong> Which scenario or endpoint is failing?</li>
+<li><strong><code>http_req_failed</code>.</strong> Now combine the two. Checks failing and <code>http_req_failed</code> at 0% means the application is returning wrong answers through a healthy pipe. Checks failing <em>and</em> <code>http_req_failed</code> above 0% means infrastructure is in the story too.</li>
+<li><strong>Latency</strong>, starting with <code>http_req_duration</code> p(95) against your SLO or baseline.</li>
+<li><strong>VUs.</strong> Was the concurrency realistic? Perfect numbers at 2 VUs are not a result. They are an absence of one.</li>
+</ol>
+<p>Everything else in this chapter is a consequence of reading in this order — or of not reading in it.</p>
+<h2>Trap 1: "0% failures, half the checks failing — partial pass"</h2>
+<p>This is the most common misread in k6 output, and it looks like this:</p>
+<pre><code>✓ http_req_failed................: 0.00%  ✓ 0         ✗ 658
+checks...........................: 50.03% ✓ 657       ✗ 656
+</code></pre>
+<p>What people conclude: "No failures. Half the checks passed. Partial pass — some scenarios need work."</p>
+<p>What is actually happening: the server responded to every single request, and roughly half of those responses were not what the script expected. Wrong status code. Wrong body. Auth error. Redirect. The infrastructure is fine. The application is not. There is no partial credit here, because the half that failed did not fail slowly or partially — it failed completely, on every other request, for the whole run.</p>
+<p>The usual causes are mundane: a token that is missing, expired, or wrong (401/403); a wrong endpoint path or the wrong environment (404); a redirect not followed (301/302); or a 200 with the wrong content in the body. None of these show up in <code>http_req_failed</code>. All of them show up in checks. If you read <code>http_req_failed</code> first and stopped there, you reported a healthy run of a broken service.</p>
+<p>Diagnosis move: when checks fail and <code>http_req_failed</code> is 0%, log <code>res.status</code> and <code>res.body</code> temporarily, and look at the <code>{ expected_response:false }</code> latency line separately so the failing population does not contaminate the latency of the requests that worked.</p>
+<h2>Trap 2: The checkmark that means almost nothing</h2>
+<p>Look at this line, from a run where more than a third of all requests failed:</p>
+<pre><code>✓ http_req_failed................: 37.26% ✓ 51801     ✗ 87216
+</code></pre>
+<p>There is a checkmark next to a 37.26% failure rate. That checkmark is not k6 being wrong. It is k6 telling you something much narrower than you think: <strong>a threshold passed, or no threshold was defined.</strong> The ✓/✗ symbol on a metric line reports threshold status. It does not report health. If you never defined a threshold for <code>http_req_failed</code>, k6 has nothing to judge the value against, and the line wears a ✓ by default while the service falls over.</p>
+<p>This trap is dangerous precisely because it survives a quick scan. A wall of output with checkmarks reads as a wall of good news. Train yourself to read the number and ignore the symbol until you have confirmed that a real threshold exists behind it.</p>
+<p>The fix is upstream, in the script:</p>
+<pre><code class="language-javascript">thresholds: {
+  http_req_failed: [&quot;rate&lt;0.01&quot;],
+  http_req_duration: [&quot;p(95)&lt;500&quot;],
+  checks: [&quot;rate&gt;0.99&quot;],
+}
+</code></pre>
+<p>With explicit thresholds, the symbol starts to mean something. Without them, it is decoration.</p>
+<h2>Trap 3: When the average is lower than the median, your failures are hiding in it</h2>
+<p>Normal latency distributions have a long right tail: a minority of slow requests pulls the average <em>up</em>, so average sits above median. When you see the reverse — average <em>below</em> median — something unusual is in the data:</p>
+<pre><code>http_req_duration..............: avg=118.35ms  med=173.05ms
+  { expected_response:true }...: avg=182.45ms  med=184.48ms
+</code></pre>
+<p>What people conclude: "Average response time is 118 milliseconds. Fine."</p>
+<p>What is actually happening: there are two populations mixed together — a bimodal distribution. One population is real requests doing real work, centered around 173ms. The other is a large set of very fast requests pulling the average down. Under load, very fast requests are usually failures: the server rejects them in a few milliseconds instead of doing the work. In the run above, 37% of requests failed. The "118ms average" is the average of honest work and instant rejection. It describes neither.</p>
+<p>The <code>{ expected_response:true }</code> line separates the populations. Successful requests averaged 182ms — over 50% worse than the headline average suggested. That is the number your users experienced.</p>
+<p>Rule: whenever avg &lt; med on <code>http_req_duration</code>, stop quoting the combined average. Read the <code>expected_response:true</code> line for user experience, and go find out why the fast population exists. It is almost never good news.</p>
+<h2>Trap 4: A p95 built on almost no data</h2>
+<p>Percentiles feel precise. p(95) = 35.62ms reads like a measurement. Whether it is one depends entirely on how many requests stand behind it.</p>
+<p>A percentile is a rank in a sorted list. With about 45 requests in a window, the p95 is roughly the second-worst value in the whole run — one outlier <em>is</em> the percentile. With about 95 requests, it is around the fifth-worst: usable. With 145 or more, it starts to stabilize. The number prints with the same two decimal places in all three cases. k6 does not warn you which case you are in. You have to know your sample size before you quote the percentile.</p>
+<p>This bites hardest in two places. First, smoke tests and low-VU steps: a clean p95 at 2 VUs is a percentile over a handful of requests against an unloaded system. It is not evidence about performance; it is evidence the service was reachable. Second, the early steps of a breakpoint test, where each step's sample is smaller than the last steps' and the p95 jumps around for statistical reasons that have nothing to do with the service.</p>
+<p>Rule: before you cite a p95, ask how many requests it summarizes. If the answer is in the dozens, treat the percentile as an anecdote, not a measurement — and say so in the report instead of letting the decimal places speak for you.</p>
+<h2>Trap 5: Judging the hold by its first minute, and measuring the ramp-down</h2>
+<p>A hold stage does not start at steady state. When the last virtual user spawns at the end of a ramp, it does not reach its full, rhythmic contribution immediately — depending on whether your script makes its first request immediately or sleeps first, the last VU's contribution settles roughly 58–60 seconds after it spawns. Throughput climbs and wobbles during that first minute. This is the <strong>stabilization window</strong>, and it is transitional data: neither ramp nor steady state.</p>
+<p>Two mistakes follow from ignoring it:</p>
+<p><strong>Mistake one: judging the hold by its opening.</strong> If you slice the first minute of a hold and find throughput below target or latency inflated — early requests often pay cold-connection costs — you may be looking at VUs still falling into rhythm, not at the service. The effective measurement window of any hold is the hold minus about a minute. A 10-minute hold gives you roughly 9 minutes of trustworthy data; a 20-minute hold, roughly 19. Short holds are mostly transition, which is one more reason short holds produce numbers that do not reproduce.</p>
+<p><strong>Mistake two: treating ramp-down as measurement.</strong> When a stage ramps down, VUs are de-spawned one by one from a rhythm that already exists. Throughput declines gradually because there are fewer contributors, not because the service changed. Ramp-down is a cool-down. Nothing measured there describes the service at any real load level. Stop measuring when ramp-down begins.</p>
+<p>k6 will not protect you from either mistake. Its summary aggregates the whole run — ramp, stabilization, ramp-down tail, all of it — and does not slice by stage. On long holds the contamination is small (about 5% of a 20-minute hold) and can be documented as acceptable noise. On short holds it can be the story. Which brings us to the practical rule for the tool that <em>can</em> slice: your APM.</p>
+<h2>The measurement-window rule</h2>
+<p>k6 tells you what happened in aggregate. Your APM, with per-request spans, tells you what happened at a specific step, in a specific window. Use it for per-step evidence, and set the window deliberately:</p>
+<pre><code>APM query window per step = [hold_start + 90s] → [hold_end]
+</code></pre>
+<p>Start the query 90 seconds after the hold begins. That covers the full stabilization window plus a safety margin, so first-iteration and cold-connection requests stay out of your evidence. End the query when the hold ends — which is also where ramp-down begins. Inside that window, the spans are steady state: request counts and p95 from the APM can stand next to the k6 aggregate without the two tools appearing to contradict each other. (They measure different things — k6 from the client side, end to end; the APM from the server side, per request — and most "the tools disagree" arguments are really window and measurement-point arguments. The full pack takes that apart in detail.)</p>
+<h2>Two runs, two verdicts</h2>
+<p>Everything above, applied. These are the two reference runs used throughout this chapter.</p>
+<p><strong>Run A — smoke test, 2 VUs, short run.</strong> The scan-friendly reading: latency is beautiful (p95 of 35.6ms), <code>http_req_failed</code> is 0.00%, most lines carry checkmarks.</p>
+<pre><code>checks...........................: 50.03% ✓ 657       ✗ 656
+✓ http_req_failed................: 0.00%  ✓ 0         ✗ 658
+http_req_duration................: avg=33.08ms med=30.91ms p(95)=35.62ms
+vus..............................: 2
+</code></pre>
+<p>Read in the chapter's order, it falls apart in the first line. Checks: 50.03%. One global check — "service is up (status 200)" — failed on all 656 of its attempts while the grouped checks passed, pointing at a specific non-grouped request returning non-200 responses. <code>http_req_failed</code> at 0% confirms the server answered everything; it answered wrongly. And the lovely p95 is a percentile over 658 requests from 2 VUs against no load — Trap 4 in a clean shirt.</p>
+<p><strong>Verdict Run A earns:</strong> the service is reachable and responds quickly, and it is returning errors for the request that matters most. This is an application bug found by a smoke test. It is not a passing performance result, and it is not evidence about performance at all.</p>
+<p><strong>Run B — stress test, 7 VUs, one-hour soak.</strong> The scan-friendly reading: checks improved to 62.73%, average latency 118ms, checkmark on the failure line.</p>
+<pre><code>checks...........................: 62.73% ✓ 174424    ✗ 103601
+✓ http_req_failed................: 37.26% ✓ 51801     ✗ 87216
+http_req_duration................: avg=118.35ms med=173.05ms p(95)=221.89ms max=14.94s
+  { expected_response:true }...: avg=182.45ms med=184.48ms p(95)=232.09ms
+</code></pre>
+<p>In order: checks at 62.73% are critical, full stop. The breakdown localizes it — setup, login, and session checks all pass; only the business endpoint degrades, which rules out auth and connectivity and points down the business path. <code>http_req_failed</code> at 37.26% (wearing its meaningless ✓, Trap 2) says real failures appear under sustained load that the smoke test never provoked. avg (118ms) below med (173ms) is Trap 3: failed requests returning in milliseconds are dragging the average down, and the successful-request average of 182ms is the honest latency figure. The max of 14.94 seconds — invisible at 2 VUs, where the max was 411ms — says the tail under stress is a different world.</p>
+<p><strong>Verdict Run B earns:</strong> the platform holds (auth, sessions, connectivity) and the business endpoint does not. It degrades under sustained load, fails over a third of its requests, and its real latency is half again worse than the headline average. This run is a clear fail with a clear address — which is exactly what a stress test is for.</p>
+<p>Same tool. Same output format. Opposite conclusions from the ones a quick scan produces — in both directions. That is the whole argument for reading in order and knowing the traps by name.</p>
+<h2>Quick reference — the checklist card</h2>
+<p><strong>Reading order (every run, no exceptions)</strong></p>
+<ol>
+<li>Checks % — below 95% is a problem, below 80% is critical</li>
+<li>Check breakdown by group — which endpoint or scenario</li>
+<li><code>http_req_failed</code> — combine with checks: checks fail + 0% failed = application error; both fail = infrastructure too</li>
+<li>The ✓/✗ symbols — only meaningful if you defined explicit thresholds</li>
+<li><code>http_req_duration</code> p(95) vs SLO/baseline — then avg vs med</li>
+<li><code>http_req_waiting</code> vs <code>http_req_receiving</code> — server-side vs payload/bandwidth</li>
+<li>VUs and total requests — was there enough load and enough data to conclude anything</li>
+</ol>
+<p><strong>Trap list</strong></p>
+<ul>
+<li>☐ 0% <code>http_req_failed</code> + failing checks ≠ partial pass. The app is failing through a healthy pipe.</li>
+<li>☐ ✓ next to a bad number = a threshold passed or none was set. Read the number, not the symbol.</li>
+<li>☐ avg &lt; med = fast failures are skewing the average. Quote <code>{ expected_response:true }</code> instead.</li>
+<li>☐ p95 over a few dozen requests is an anecdote, not a measurement. Check the sample before citing it.</li>
+<li>☐ First ~60 seconds of any hold = stabilization. Not steady state. Do not judge the hold by it.</li>
+<li>☐ Ramp-down = cool-down. Stop measuring when it begins.</li>
+<li>☐ Clean numbers at 2 VUs = the service was reachable. Nothing more.</li>
+</ul>
+<p><strong>Measurement window (APM, per step)</strong></p>
+<pre><code>[hold_start + 90s] → [hold_end]
+</code></pre>
+<h2>What the full pack adds</h2>
+<p>This chapter is one of five. The full pack works the rest of the job in the same register: the decisions <em>before</em> the test (which test answers the question you actually have, workload modeling and VU math via Little's Law, and when each test type is the wrong tool); a reporting system for explaining results to leadership — a two-tier report with the verdict first in plain language, acceptance bands, and research-backed frameworks for turning metrics into a decision, labeled as frameworks rather than war stories; enablement — how testing practice actually gets adopted by teams, including cadence policy and per-deploy risk scoring, and why mandates and quality gates fail in predictable ways; and a section on reviewing AI-generated tests and analysis — an eight-point verification checklist, what AI gets wrong in test design, and how to make the AI check its own work so the human keeps the verdict instead of redoing the arithmetic. If this chapter changed how you read your last run, the rest is written for the same reader.</p>
+  <div class="bar bottom">
+    <span><a href="index.html">&larr; Back to the pack</a> &middot; <a href="https://edelstein13.gumroad.com/l/performance-testing-judgment-pack">Get the founding edition</a></span>
+    <span>Download: <a href="sample-chapter.md">Markdown</a></span>
+  </div>
+</main>
+</body>
+</html>
